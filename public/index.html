@@ -25,17 +25,17 @@
         <div id="setup-note" class="notice hidden"></div>
         <form id="login-form">
           <h2>Créer ton compte.</h2><p class="muted">Choisis un pseudo pour rejoindre ton cercle.</p>
-          <label>Identifiant<input name="username" autocomplete="username" required minlength="3" maxlength="20" placeholder="Ton identifiant"></label>
+          <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" required placeholder="Choisis ton pseudo"></label>
           <p class="muted">Aucun mot de passe demandé.</p>
-          <button class="primary" type="submit">Créer mon compte <span>↗</span></button><p class="form-message" id="login-message" role="status"></p>
+          <button class="primary" type="submit">Continuer <span>↗</span></button><p class="form-message" id="login-message" role="status"></p>
         </form>
         <form id="register-form" class="hidden">
           <h2>Rejoins le cercle.</h2><p class="muted" id="register-subtitle">Crée le compte du propriétaire.</p>
-          <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="3–20 caractères, sans espace"></label>
+          <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" required placeholder="Choisis ton pseudo"></label>
           <p class="muted">Aucun mot de passe demandé.</p>
           <label id="owner-code-wrap">Code secret du propriétaire<input name="owner_code" type="password" autocomplete="off" placeholder="Code secret configuré côté serveur"></label>
           <label id="invite-wrap" class="hidden">Code d'invitation<input name="invite_code" autocomplete="off" placeholder="Code reçu en privé"></label>
-          <button class="primary" type="submit">Créer mon compte <span>↗</span></button><p class="form-message" id="register-message" role="status"></p>
+          <button class="primary" type="submit">Continuer <span>↗</span></button><p class="form-message" id="register-message" role="status"></p>
         </form>
         <div class="card-foot"><span class="lock">♙</span> Accès réservé aux membres autorisés</div>
       </section>
