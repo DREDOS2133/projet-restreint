@@ -181,23 +181,53 @@ export default {
       }
 
       if (url.pathname === "/api/auth/login" && request.method === "POST") {
-        const data = await readJson(request, 12000);
-        const username = typeof data.username === "string" ? data.username.trim() : "";
-        const row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
-        if (!row || !(await verifyPassword(data.password || "", row.password_hash))) return fail("Identifiant ou mot de passe incorrect.", 401);
-        const token = randomToken();
-        const createdAt = now();
-        const expiresAt = createdAt + Number(env.SESSION_DAYS || 7) * 86400;
-        await env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
-          .bind(await sha256(token), row.id, expiresAt, createdAt).run();
-        await env.DB.prepare("INSERT INTO presence(user_id,last_seen) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen")
-          .bind(row.id, createdAt).run();
-        return json({ ok: true, user: { id: row.id, username: row.username, role: row.role } }, 200, {
-          "set-cookie": sessionCookie(token, expiresAt - createdAt)
-        });
-      }
+          const data = await readJson(request, 12000);
+          const username = (data.username || "").trim();
 
-      if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+          if (!validUsername(username)) {
+            return fail("Choisis un pseudo de 3 à 20 caractères, avec lettres, chiffres ou _.", 400);
+          }
+
+          const isOwner = username.toLowerCase() === "ghost";
+          let row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
+
+          if (!row) {
+            const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
+            if ((count?.count || 0) >= Number(env.MAX_MEMBERS || 6)) {
+              return fail("Le groupe est complet (6 membres maximum).", 403);
+            }
+
+            const createdAt = now();
+            const storedHash = await passwordHash(randomToken());
+            await env.DB.prepare("INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)")
+              .bind(username, storedHash, isOwner ? "owner" : "member", createdAt).run();
+
+            row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
+          }
+
+          if (isOwner && row.role !== "owner") {
+            await env.DB.prepare("UPDATE users SET role='owner' WHERE id=?").bind(row.id).run();
+            row = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(row.id).first();
+          }
+
+          const created = now();
+          const token = randomToken();
+          const expires = created + Number(env.SESSION_DAYS || 7) * 86400;
+
+          await env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
+            .bind(await sha256(token), row.id, expires, created).run();
+
+          await env.DB.prepare("INSERT INTO presence(user_id,last_seen) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen")
+            .bind(row.id, created).run();
+
+          return new Response(JSON.stringify({
+            ok: true,
+            user: { id: row.id, username: row.username, role: row.role }
+          }), {
+            headers: { ...JSON_HEADERS, "set-cookie": sessionCookie(token, expires - created) }
+          });
+        }
+        if (url.pathname === "/api/auth/logout" && request.method === "POST") {
         const token = cookieToken(request);
         if (token) await env.DB.prepare("DELETE FROM sessions WHERE token_hash=?").bind(await sha256(token)).run();
         return json({ ok: true }, 200, { "set-cookie": clearCookie() });

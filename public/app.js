@@ -39,7 +39,7 @@ async function init() {
       $("#owner-code-wrap").classList.add("hidden");
       $("#invite-wrap").classList.add("hidden");
     } else {
-      $("#tab-register").classList.remove("hidden");
+      $("#tab-register").classList.add("hidden");
       $("#owner-code-wrap").classList.add("hidden");
       $("#invite-wrap").classList.remove("hidden");
       $("#register-subtitle").textContent = "Le propriétaire doit te transmettre un code d'invitation.";
