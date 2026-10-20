@@ -1,0 +1,11 @@
+﻿{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "projet-restreint",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-20",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  }
+}
