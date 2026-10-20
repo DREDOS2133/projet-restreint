@@ -21,13 +21,14 @@
         <div class="feature-pills"><span>✦ Messages privés</span><span>⌁ Fichiers & vocaux</span><span>♧ 6 membres maximum</span></div>
       </div>
       <section class="auth-card">
-        <div class="auth-tabs"><button class="tab active" id="tab-login">Continuer</button><button class="tab hidden" id="tab-register">Créer un compte</button></div>
+        <div class="auth-tabs"><button class="tab active" id="tab-login">Connexion</button></div>
         <div id="setup-note" class="notice hidden"></div>
         <form id="login-form">
-          <h2>Bienvenue dans ton cercle.</h2>
-          <p class="muted">Entre ton pseudo pour rejoindre l'espace.</p>
-          <label>Pseudo<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="Ton pseudo"></label>
-          <button class="primary" type="submit">Continuer <span>↗</span></button>
+          <h2>Connexion</h2>
+          <p class="muted">Choisis un pseudo pour rejoindre ton cercle.</p>
+          <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="Ton pseudo"></label>
+          <p class="muted">Aucun mot de passe demandé.</p>
+          <button class="primary" type="submit">Se connecter <span>↗</span></button>
           <p class="form-message" id="login-message" role="status"></p>
         </form>
         <form id="register-form" class="hidden">

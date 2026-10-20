@@ -196,34 +196,33 @@ export default {
           const username = (data.username || "").trim();
 
           if (!validUsername(username)) {
-            return fail("Le pseudo doit contenir 3 à 20 caractères : lettres, chiffres ou _.", 400);
+            return fail("Le pseudo doit contenir entre 3 et 20 caractères : lettres, chiffres ou _.", 400);
           }
 
           const isOwner = username.toLowerCase() === "ghost909";
-          const maxMembers = 6;
           let row = await env.DB.prepare(
             "SELECT * FROM users WHERE username=? COLLATE NOCASE"
           ).bind(username).first();
 
           if (!row) {
-            const created = now();
-            const passwordHashValue = await passwordHash(randomToken());
-            const result = await env.DB.prepare(
-              "INSERT INTO users(username,password_hash,role,created_at) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM users) < ?"
-            ).bind(username, passwordHashValue, isOwner ? "owner" : "member", created, maxMembers).run();
-
-            if (!result.meta || !result.meta.changes) {
+            const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
+            if ((count?.count || 0) >= 6) {
               return fail("Le groupe est complet : 6 membres maximum.", 403);
             }
+
+            const created = now();
+            const randomHash = await passwordHash(randomToken());
+
+            await env.DB.prepare(
+              "INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)"
+            ).bind(username, randomHash, isOwner ? "owner" : "member", created).run();
 
             row = await env.DB.prepare(
               "SELECT * FROM users WHERE username=? COLLATE NOCASE"
             ).bind(username).first();
           }
 
-          if (!row) {
-            return fail("Impossible de créer ce compte. Réessaie.", 500);
-          }
+          if (!row) return fail("Impossible de créer ou retrouver ce compte.", 500);
 
           const desiredRole = isOwner ? "owner" : "member";
           if (row.role !== desiredRole) {

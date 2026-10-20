@@ -63,26 +63,24 @@ $("#tab-login").addEventListener("click", () => selectAuthTab("login"));
 $("#tab-register").addEventListener("click", () => {
   $("#tab-register").classList.add("active");
   $("#tab-login").classList.remove("active");
-  $("#register-form").classList.remove("hidden");
+  $("#register-form").classList.add("hidden");
   $("#login-form").classList.add("hidden");
 });
 $("#login-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const f = new FormData(e.currentTarget);
-  const btn = e.currentTarget.querySelector("button");
-  btn.disabled = true;
+  const form = new FormData(e.currentTarget);
+  const username = String(form.get("username") || "").trim();
+  const button = e.currentTarget.querySelector("button");
+  button.disabled = true;
   $("#login-message").textContent = "";
 
   try {
-    await post("/api/auth/login", {
-      username: String(f.get("username") || "").trim(),
-      password: String(f.get("password") || "")
-    });
+    await post("/api/auth/login", { username });
     await enterApp(await api("/api/auth/me"));
-  } catch (err) {
-    $("#login-message").textContent = err.message;
+  } catch (error) {
+    $("#login-message").textContent = error.message;
   } finally {
-    btn.disabled = false;
+    button.disabled = false;
   }
 });
 $("#register-form").addEventListener("submit", async e => {
