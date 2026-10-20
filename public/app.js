@@ -34,7 +34,7 @@ async function init() {
     const status = await api("/api/auth/status");
     if (!status.initialized) {
       $("#setup-note").classList.remove("hidden");
-      $("#setup-note").textContent = "Première connexion : utilise les identifiants administrateur configurés sur le serveur.";
+      $("#setup-note").textContent = "Choisis un pseudo pour créer ton compte. Le pseudo ghost909 est administrateur."; 
       $("#tab-register").classList.add("hidden");
       $("#owner-code-wrap").classList.add("hidden");
       $("#invite-wrap").classList.add("hidden");
