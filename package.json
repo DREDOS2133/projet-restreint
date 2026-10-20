@@ -1,9 +1,10 @@
-﻿{
+{
   "name": "projet-restreint",
-  "private": true,
   "version": "1.0.0",
-  "description": "Espace de discussion prive pour six etudiants maximum",
+  "private": true,
+  "type": "module",
   "scripts": {
+    "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

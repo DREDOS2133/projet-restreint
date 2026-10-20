@@ -1,0 +1,22 @@
+PROJET RESTREINT — DEMARRAGE RAPIDE
+
+1. Crée la base D1 `projet-restreint-db` dans Cloudflare.
+2. Exécute le contenu de `schema.sql` dans la Console de cette base.
+3. Copie son Database ID.
+4. Remplace l'identifiant provisoire dans `wrangler.jsonc` par le Database ID réel.
+5. Dans Cloudflare > Workers & Pages > projet-restreint > Settings > Variables and Secrets,
+   crée un SECRET nommé `OWNER_SETUP_CODE`, avec un code secret unique et long.
+6. Copie les fichiers de cette archive dans le dépôt local cloné, puis exécute :
+
+   git add .
+   git commit -m "Complete PROJET RESTREINT application"
+   git push
+
+7. Dans Cloudflare > projet-restreint > Deployments, vérifie le résultat.
+8. Si l'API token de Build a été révoqué, crée un nouveau token dans Settings > Builds,
+   puis relance le déploiement.
+9. Ouvre l'adresse workers.dev, crée le premier compte avec le code secret propriétaire.
+10. Depuis le compte propriétaire, crée une invitation distincte pour chaque membre.
+
+IMPORTANT : ne publie pas le secret OWNER_SETUP_CODE dans GitHub et ne le mets dans aucun fichier du site.
+Le database_id qui se trouve dans le ZIP est un marqueur provisoire; il doit être remplacé avant déploiement.

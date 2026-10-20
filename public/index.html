@@ -1,97 +1,69 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080611">
-  <meta name="description" content="PROJET RESTREINT — espace privé de discussion pour un groupe de six étudiants maximum.">
-  <title>PROJET RESTREINT — Espace privé</title>
-  <link rel="stylesheet" href="/style.css">
-  <script src="/app.js" defer></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08070d"><meta name="description" content="Espace de discussion privé pour six membres maximum.">
+  <title>PROJET RESTREINT — Espace privé</title><link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
-  <div class="glow glow-one" aria-hidden="true"></div>
-  <div class="glow glow-two" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="PROJET RESTREINT accueil"><span class="brand-mark">✦</span><span>PROJET <b>RESTREINT</b><small>ESPACE PRIVÉ · 6 MEMBRES MAX.</small></span></a>
+      <div id="top-status" class="status"><i></i> Espace privé</div>
+    </header>
 
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="Accueil PROJET RESTREINT">
-      <span class="brand-mark">PR</span>
-      <span>PROJET <b>RESTREINT</b></span>
-    </a>
-    <span class="private-badge"><i></i> ESPACE PRIVÉ</span>
-  </header>
-
-  <main class="layout">
-    <section class="hero">
-      <div class="eyebrow"><span></span> UN ESPACE. SIX MEMBRES. UN GROUPE.</div>
-      <h1>Nos échanges,<br>notre <span>espace.</span></h1>
-      <p class="intro">
-        Un espace de discussion conçu pour un petit groupe d’étudiants.
-        Échangez, partagez vos documents et gardez vos conversations au même endroit.
-      </p>
-
-      <div class="features">
-        <div class="feature">
-          <span class="feature-icon">✦</span>
-          <div><strong>Discussions privées</strong><small>Un espace pensé pour votre groupe</small></div>
-        </div>
-        <div class="feature">
-          <span class="feature-icon">⌁</span>
-          <div><strong>Partage de documents</strong><small>Photos, PDF et messages vocaux</small></div>
-        </div>
-        <div class="feature">
-          <span class="feature-icon">♧</span>
-          <div><strong>Groupe limité</strong><small>Six membres maximum, propriétaire inclus</small></div>
-        </div>
+    <section id="auth-screen" class="auth-layout">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> CERCLE PRIVÉ</div>
+        <h1>Un espace à part.<br><em>Vos échanges,</em><br>votre cercle.</h1>
+        <p>Un lieu discret pour discuter, partager des fichiers et rester en contact avec les personnes de confiance.</p>
+        <div class="feature-pills"><span>✦ Messages privés</span><span>⌁ Fichiers & vocaux</span><span>♧ 6 membres maximum</span></div>
       </div>
-
-      <div class="notice">
-        <span class="notice-icon">✧</span>
-        <span>Un espace réservé aux personnes autorisées.</span>
-      </div>
+      <section class="auth-card">
+        <div class="auth-tabs"><button class="tab active" id="tab-login" type="button">Connexion</button><button class="tab" id="tab-register" type="button">Créer un compte</button></div>
+        <div id="setup-note" class="notice hidden"></div>
+        <form id="login-form">
+          <h2>Content de te revoir.</h2><p class="muted">Connecte-toi à ton espace privé.</p>
+          <label>Identifiant<input name="username" autocomplete="username" required minlength="3" maxlength="20" placeholder="Ton identifiant"></label>
+          <label>Mot de passe<input name="password" type="password" autocomplete="current-password" required placeholder="Ton mot de passe"></label>
+          <button class="primary" type="submit">Entrer dans l'espace <span>↗</span></button><p class="form-message" id="login-message" role="status"></p>
+        </form>
+        <form id="register-form" class="hidden">
+          <h2>Rejoins le cercle.</h2><p class="muted" id="register-subtitle">Crée le compte du propriétaire.</p>
+          <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" required placeholder="3–20 caractères, sans espace"></label>
+          <label>Mot de passe<input name="password" type="password" autocomplete="new-password" minlength="10" required placeholder="10 caractères minimum"></label>
+          <label id="owner-code-wrap">Code secret du propriétaire<input name="owner_code" type="password" autocomplete="off" placeholder="Code secret configuré côté serveur"></label>
+          <label id="invite-wrap" class="hidden">Code d'invitation<input name="invite_code" autocomplete="off" placeholder="Code reçu en privé"></label>
+          <button class="primary" type="submit">Créer mon compte <span>↗</span></button><p class="form-message" id="register-message" role="status"></p>
+        </form>
+        <div class="card-foot"><span class="lock">♙</span> Accès réservé aux membres autorisés</div>
+      </section>
     </section>
 
-    <section class="auth-card" aria-labelledby="auth-title">
-      <div class="card-top">
-        <div class="mini-symbol">✦</div>
-        <span class="card-label">VOTRE ESPACE</span>
-      </div>
-
-      <h2 id="auth-title">Bientôt réunis.</h2>
-      <p class="card-description">
-        La plateforme est en cours de préparation. La connexion sera activée
-        après la configuration sécurisée des comptes.
-      </p>
-
-      <div class="status-box">
-        <span class="status-dot"></span>
-        <div>
-          <strong id="status-title">Initialisation de la plateforme</strong>
-          <small id="status-text">Vérification de la disponibilité du site…</small>
-        </div>
-      </div>
-
-      <div class="divider"><span>CE QUI ARRIVE</span></div>
-
-      <ul class="coming-list">
-        <li><span>✓</span> Comptes avec pseudo unique</li>
-        <li><span>✓</span> Salon commun et messages privés</li>
-        <li><span>✓</span> Photos, PDF et messages vocaux</li>
-        <li><span>✓</span> Réponses, réactions et mentions</li>
-      </ul>
-
-      <button class="disabled-button" type="button" disabled>
-        <span>Connexion bientôt disponible</span><span>→</span>
-      </button>
-
-      <p class="security-note">Les identifiants ne sont pas encore demandés.</p>
+    <section id="chat-screen" class="chat-layout hidden">
+      <aside class="sidebar">
+        <div class="side-head"><div><span class="eyebrow">VOTRE ESPACE</span><h2>Le cercle</h2></div><span class="count" id="member-count">0/6</span></div>
+        <button class="room-button selected" id="group-room" type="button"><span class="room-icon">✦</span><span><b>Discussion générale</b><small>Le salon commun</small></span></button>
+        <div class="section-label">MEMBRES</div><div id="member-list" class="member-list"></div>
+        <div id="owner-tools" class="owner-tools hidden"><div class="section-label">PROPRIÉTAIRE</div><button id="invite-button" class="outline-button" type="button">＋ Créer une invitation</button><div id="invite-result" class="invite-result hidden"></div></div>
+        <div class="profile"><div class="avatar" id="my-avatar">?</div><div class="profile-name"><b id="my-name">Membre</b><small id="my-role">Membre</small></div><button id="logout-button" class="icon-button" title="Déconnexion" aria-label="Déconnexion" type="button">↪</button></div>
+      </aside>
+      <section class="conversation">
+        <div class="conversation-head"><div class="conversation-title"><span class="room-icon large" id="conversation-icon">✦</span><div><h2 id="conversation-name">Discussion générale</h2><p id="conversation-subtitle">Un espace pour échanger ensemble</p></div></div><span class="live-tag"><i></i> PRIVÉ</span></div>
+        <div id="messages" class="messages" aria-live="polite"><div class="empty-state"><div class="empty-symbol">✦</div><h3>Le début de votre histoire.</h3><p>Envoyez le premier message du cercle.</p></div></div>
+        <div id="reply-preview" class="reply-preview hidden"></div>
+        <form id="composer" class="composer">
+          <div class="composer-tools"><label class="attach-button" title="Joindre une photo ou un PDF">＋<input id="file-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" hidden></label><button id="voice-button" type="button" class="attach-button" title="Enregistrer un message vocal">🎙</button><span id="attachment-name" class="attachment-name"></span></div>
+          <textarea id="message-input" rows="1" maxlength="4000" placeholder="Écris un message… (@membre pour mentionner)" aria-label="Message"></textarea>
+          <button class="send-button" type="submit" aria-label="Envoyer">↑</button>
+        </form>
+        <div class="composer-hint">Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne</div>
+      </section>
     </section>
+    <footer><span>PROJET RESTREINT</span><span>Un petit cercle. Un espace privé.</span></footer>
   </main>
-
-  <footer>
-    <span>PROJET RESTREINT</span>
-    <span>Un espace privé pour apprendre ensemble.</span>
-  </footer>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/app.js" defer></script>
 </body>
 </html>
