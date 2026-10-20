@@ -24,10 +24,10 @@
         <div class="auth-tabs"><button class="tab active" id="tab-login" type="button">Connexion</button><button class="tab" id="tab-register" type="button">Créer un compte</button></div>
         <div id="setup-note" class="notice hidden"></div>
         <form id="login-form">
-          <h2>Créer ton compte.</h2><p class="muted">Choisis un pseudo pour rejoindre ton cercle.</p>
+          <h2>Connexion</h2><p class="muted">Choisis un pseudo pour rejoindre ton cercle.</p>
           <label>Identifiant<input name="username" autocomplete="username" minlength="3" maxlength="20" required placeholder="Choisis ton pseudo"></label>
           <p class="muted">Aucun mot de passe demandé.</p>
-          <button class="primary" type="submit">Continuer <span>↗</span></button><p class="form-message" id="login-message" role="status"></p>
+          <label>Mot de passe<input name="password" type="password" autocomplete="current-password" minlength="10" required placeholder="Ton mot de passe"></label><button class="primary" type="submit">Se connecter <span>↗</span></button><p class="form-message" id="login-message" role="status"></p>
         </form>
         <form id="register-form" class="hidden">
           <h2>Rejoins le cercle.</h2><p class="muted" id="register-subtitle">Crée le compte du propriétaire.</p>

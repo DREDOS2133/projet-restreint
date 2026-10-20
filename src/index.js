@@ -49,7 +49,7 @@ function clearCookie() { return "pr_session=; HttpOnly; Secure; SameSite=Strict;
 function validUsername(value) { return typeof value === "string" && /^[a-zA-Z0-9_]{3,20}$/.test(value); }
 function validPassword(value) { return typeof value === "string" && value.length >= 10 && value.length <= 200; }
 function isOwner(user) { return user?.role === "owner"; }
-function maxMembers(env) { const n = Number(env.MAX_MEMBERS || 6); return Number.isInteger(n) && n >= 2 && n <= 6 ? n : 6; }
+function maxMembers(env) { const n = Math.min(6, Math.max(1, Number(env.MAX_MEMBERS || 6))); return Number.isInteger(n) && n >= 2 && n <= 6 ? n : 6; }
 
 async function currentUser(request, env) {
   const token = cookieToken(request);
@@ -127,98 +127,151 @@ export default {
       }
 
       if (url.pathname === "/api/auth/register" && request.method === "POST") {
-        const data = await readJson(request, 12000);
-        const username = typeof data.username === "string" ? data.username.trim() : "";
-        const password = data.password || "";
-        if (!validUsername(username)) return fail("Identifiant : 3 à 20 caractères, lettres, chiffres et _ uniquement.");
-        if (!validPassword(password)) return fail("Le mot de passe doit contenir au moins 10 caractères.");
-
-        const countRow = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
-        const count = countRow?.count || 0;
-        if (count >= maxMembers(env)) return fail("Le groupe est complet (6 membres maximum).", 403);
-        const createdAt = now();
-        let role = "member";
-        let inviteId = null;
-
-        if (count === 0) {
-          if (!env.OWNER_SETUP_CODE || typeof data.owner_code !== "string" || data.owner_code !== env.OWNER_SETUP_CODE) {
-            return fail("Le code secret du propriétaire est incorrect ou n'est pas configuré sur Cloudflare.", 403);
-          }
-          role = "owner";
-        } else {
-          const invite = typeof data.invite_code === "string" ? data.invite_code.trim() : "";
-          if (!invite) return fail("Le propriétaire doit te transmettre un code d'invitation.", 403);
-          const inviteRow = await env.DB.prepare("SELECT id FROM invites WHERE code_hash=? AND used_by IS NULL").bind(await sha256(invite)).first();
-          if (!inviteRow) return fail("Code d'invitation invalide ou déjà utilisé.", 403);
-          inviteId = inviteRow.id;
-        }
-
-        const hash = await passwordHash(password);
-        let result;
-        try {
-          result = await env.DB.prepare("INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)")
-            .bind(username, hash, role, createdAt).run();
-        } catch {
-          return fail("Cet identifiant est déjà utilisé.", 409);
-        }
-        const userId = result.meta.last_row_id;
-        if (inviteId !== null) {
-          const used = await env.DB.prepare("UPDATE invites SET used_by=?,used_at=? WHERE id=? AND used_by IS NULL")
-            .bind(userId, createdAt, inviteId).run();
-          if (!used.meta.changes) {
-            await env.DB.prepare("DELETE FROM users WHERE id=?").bind(userId).run();
-            return fail("Ce code d'invitation vient d'être utilisé. Demande-en un autre.", 409);
-          }
-        }
-        const token = randomToken();
-        const expiresAt = createdAt + Number(env.SESSION_DAYS || 7) * 86400;
-        await env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
-          .bind(await sha256(token), userId, expiresAt, createdAt).run();
-        await env.DB.prepare("INSERT INTO presence(user_id,last_seen) VALUES(?,?)").bind(userId, createdAt).run();
-        return json({ ok: true, user: { id: userId, username, role }, message: role === "owner" ? "Compte propriétaire créé." : "Compte créé." }, 200, {
-          "set-cookie": sessionCookie(token, expiresAt - createdAt)
-        });
-      }
-
-      if (url.pathname === "/api/auth/login" && request.method === "POST") {
           const data = await readJson(request, 12000);
           const username = (data.username || "").trim();
+          const password = data.password || "";
 
           if (!validUsername(username)) {
-            return fail("Choisis un pseudo de 3 à 20 caractères, avec lettres, chiffres ou _.", 400);
+            return fail("Le pseudo doit contenir entre 3 et 20 caractères : lettres, chiffres ou _.", 400);
+          }
+          if (!validPassword(password)) {
+            return fail("Le mot de passe doit contenir au moins 10 caractères.", 400);
+          }
+          if (username.toLowerCase() === "ghost909") {
+            return fail("Ce pseudo est réservé au propriétaire. Utilise Connexion.", 403);
           }
 
-          const isOwner = username.toLowerCase() === "ghost909";
-          let row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
+          const existing = await env.DB.prepare(
+            "SELECT id FROM users WHERE username=? COLLATE NOCASE"
+          ).bind(username).first();
 
-          if (!row) {
-            const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
-            if ((count?.count || 0) >= Number(env.MAX_MEMBERS || 6)) {
-              return fail("Le groupe est complet (6 membres maximum).", 403);
+          if (existing) return fail("Ce pseudo est déjà utilisé. Choisis-en un autre.", 409);
+
+          const total = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
+          const owner = await env.DB.prepare(
+            "SELECT id FROM users WHERE username='ghost909' COLLATE NOCASE AND role='owner'"
+          ).first();
+
+          const maxMembers = 6;
+          const registrationLimit = owner ? maxMembers : maxMembers - 1;
+
+          if ((total?.count || 0) >= registrationLimit) {
+            return fail("Le groupe est complet ou la place du propriétaire doit être réservée.", 403);
+          }
+
+          const created = now();
+          const hashed = await passwordHash(password);
+          let result;
+
+          try {
+            result = await env.DB.prepare(
+              "INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)"
+            ).bind(username, hashed, "member", created).run();
+          } catch {
+            return fail("Impossible de créer ce compte. Vérifie le pseudo et réessaie.", 409);
+          }
+
+          const userId = result.meta.last_row_id;
+          const token = randomToken();
+          const expires = created + Number(env.SESSION_DAYS || 7) * 86400;
+
+          await env.DB.prepare(
+            "INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)"
+          ).bind(await sha256(token), userId, expires, created).run();
+
+          await env.DB.prepare(
+            "INSERT INTO presence(user_id,last_seen) VALUES(?,?)"
+          ).bind(userId, created).run();
+
+          return new Response(JSON.stringify({
+            ok: true,
+            user: { id: userId, username, role: "member" },
+            message: "Compte créé."
+          }), {
+            headers: { ...JSON_HEADERS, "set-cookie": sessionCookie(token, expires - created) }
+          });
+        }
+        if (url.pathname === "/api/auth/login" && request.method === "POST") {
+          const data = await readJson(request, 12000);
+          const username = (data.username || "").trim();
+          const password = data.password || "";
+
+          if (!validUsername(username) || !password) {
+            return fail("Entre ton pseudo et ton mot de passe.", 400);
+          }
+
+          let row;
+
+          if (username.toLowerCase() === "ghost909") {
+            const ownerPassword = env.OWNER_PASSWORD || "";
+
+            if (!ownerPassword) {
+              return fail("Le mot de passe administrateur doit être configuré dans les secrets Cloudflare.", 503);
             }
 
-            const createdAt = now();
-            const storedHash = await passwordHash(randomToken());
-            await env.DB.prepare("INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)")
-              .bind(username, storedHash, isOwner ? "owner" : "member", createdAt).run();
+            if (password !== ownerPassword) {
+              return fail("Pseudo ou mot de passe incorrect.", 401);
+            }
 
-            row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
-          }
+            row = await env.DB.prepare(
+              "SELECT * FROM users WHERE username=? COLLATE NOCASE"
+            ).bind("ghost909").first();
 
-          if (isOwner && row.role !== "owner") {
-            await env.DB.prepare("UPDATE users SET role='owner' WHERE id=?").bind(row.id).run();
-            row = await env.DB.prepare("SELECT * FROM users WHERE id=?").bind(row.id).first();
+            const ownerHash = await passwordHash(password);
+
+            if (!row) {
+              const total = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
+
+              if ((total?.count || 0) >= 6) {
+                return fail("Le groupe est complet. Une place doit être libérée pour le propriétaire.", 403);
+              }
+
+              const created = now();
+
+              await env.DB.prepare(
+                "INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)"
+              ).bind("ghost909", ownerHash, "owner", created).run();
+            } else if (
+              row.role !== "owner" ||
+              !(await verifyPassword(password, row.password_hash))
+            ) {
+              await env.DB.prepare(
+                "UPDATE users SET password_hash=?,role='owner' WHERE id=?"
+              ).bind(ownerHash, row.id).run();
+            }
+
+            row = await env.DB.prepare(
+              "SELECT * FROM users WHERE username=? COLLATE NOCASE"
+            ).bind("ghost909").first();
+          } else {
+            row = await env.DB.prepare(
+              "SELECT * FROM users WHERE username=? COLLATE NOCASE"
+            ).bind(username).first();
+
+            if (!row || !(await verifyPassword(password, row.password_hash))) {
+              return fail("Pseudo ou mot de passe incorrect.", 401);
+            }
+
+            if (row.role === "owner") {
+              await env.DB.prepare(
+                "UPDATE users SET role='member' WHERE id=?"
+              ).bind(row.id).run();
+
+              row.role = "member";
+            }
           }
 
           const created = now();
           const token = randomToken();
           const expires = created + Number(env.SESSION_DAYS || 7) * 86400;
 
-          await env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
-            .bind(await sha256(token), row.id, expires, created).run();
+          await env.DB.prepare(
+            "INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)"
+          ).bind(await sha256(token), row.id, expires, created).run();
 
-          await env.DB.prepare("INSERT INTO presence(user_id,last_seen) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen")
-            .bind(row.id, created).run();
+          await env.DB.prepare(
+            "INSERT INTO presence(user_id,last_seen) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET last_seen=excluded.last_seen"
+          ).bind(row.id, created).run();
 
           return new Response(JSON.stringify({
             ok: true,
