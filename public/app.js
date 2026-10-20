@@ -34,12 +34,14 @@ async function init() {
     const status = await api("/api/auth/status");
     if (!status.initialized) {
       $("#setup-note").classList.remove("hidden");
-      $("#setup-note").textContent = "Premier démarrage : crée le compte propriétaire. Le code secret doit d'abord être configuré dans les Secrets Cloudflare du Worker.";
-      selectAuthTab("register");
-      $("#register-subtitle").textContent = "Crée le compte du propriétaire.";
-      $("#owner-code-wrap").classList.remove("hidden"); $("#invite-wrap").classList.add("hidden");
+      $("#setup-note").textContent = "Première connexion : utilise les identifiants administrateur configurés sur le serveur.";
+      $("#tab-register").classList.add("hidden");
+      $("#owner-code-wrap").classList.add("hidden");
+      $("#invite-wrap").classList.add("hidden");
     } else {
-      $("#owner-code-wrap").classList.add("hidden"); $("#invite-wrap").classList.remove("hidden");
+      $("#tab-register").classList.remove("hidden");
+      $("#owner-code-wrap").classList.add("hidden");
+      $("#invite-wrap").classList.remove("hidden");
       $("#register-subtitle").textContent = "Le propriétaire doit te transmettre un code d'invitation.";
     }
     const current = await api("/api/auth/me").catch(() => null);

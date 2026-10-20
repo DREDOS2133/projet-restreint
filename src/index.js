@@ -19,7 +19,7 @@ function randomToken(bytes = 32) { return hex(crypto.getRandomValues(new Uint8Ar
 async function passwordHash(password, saltHex) {
   const salt = saltHex ? unhex(saltHex) : crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" }, key, 256);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256);
   return `${hex(salt)}:${hex(new Uint8Array(bits))}`;
 }
 async function verifyPassword(password, stored) {
