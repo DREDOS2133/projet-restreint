@@ -194,71 +194,43 @@ export default {
         if (url.pathname === "/api/auth/login" && request.method === "POST") {
           const data = await readJson(request, 12000);
           const username = (data.username || "").trim();
-          const password = data.password || "";
 
-          if (!validUsername(username) || !password) {
-            return fail("Entre ton pseudo et ton mot de passe.", 400);
+          if (!validUsername(username)) {
+            return fail("Le pseudo doit contenir 3 à 20 caractères : lettres, chiffres ou _.", 400);
           }
 
-          let row;
+          const isOwner = username.toLowerCase() === "ghost909";
+          const maxMembers = 6;
+          let row = await env.DB.prepare(
+            "SELECT * FROM users WHERE username=? COLLATE NOCASE"
+          ).bind(username).first();
 
-          if (username.toLowerCase() === "ghost909") {
-            const ownerPassword = env.OWNER_PASSWORD || "";
+          if (!row) {
+            const created = now();
+            const passwordHashValue = await passwordHash(randomToken());
+            const result = await env.DB.prepare(
+              "INSERT INTO users(username,password_hash,role,created_at) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM users) < ?"
+            ).bind(username, passwordHashValue, isOwner ? "owner" : "member", created, maxMembers).run();
 
-            if (!ownerPassword) {
-              return fail("Le mot de passe administrateur doit être configuré dans les secrets Cloudflare.", 503);
+            if (!result.meta || !result.meta.changes) {
+              return fail("Le groupe est complet : 6 membres maximum.", 403);
             }
 
-            if (password !== ownerPassword) {
-              return fail("Pseudo ou mot de passe incorrect.", 401);
-            }
-
-            row = await env.DB.prepare(
-              "SELECT * FROM users WHERE username=? COLLATE NOCASE"
-            ).bind("ghost909").first();
-
-            const ownerHash = await passwordHash(password);
-
-            if (!row) {
-              const total = await env.DB.prepare("SELECT COUNT(*) AS count FROM users").first();
-
-              if ((total?.count || 0) >= 6) {
-                return fail("Le groupe est complet. Une place doit être libérée pour le propriétaire.", 403);
-              }
-
-              const created = now();
-
-              await env.DB.prepare(
-                "INSERT INTO users(username,password_hash,role,created_at) VALUES(?,?,?,?)"
-              ).bind("ghost909", ownerHash, "owner", created).run();
-            } else if (
-              row.role !== "owner" ||
-              !(await verifyPassword(password, row.password_hash))
-            ) {
-              await env.DB.prepare(
-                "UPDATE users SET password_hash=?,role='owner' WHERE id=?"
-              ).bind(ownerHash, row.id).run();
-            }
-
-            row = await env.DB.prepare(
-              "SELECT * FROM users WHERE username=? COLLATE NOCASE"
-            ).bind("ghost909").first();
-          } else {
             row = await env.DB.prepare(
               "SELECT * FROM users WHERE username=? COLLATE NOCASE"
             ).bind(username).first();
+          }
 
-            if (!row || !(await verifyPassword(password, row.password_hash))) {
-              return fail("Pseudo ou mot de passe incorrect.", 401);
-            }
+          if (!row) {
+            return fail("Impossible de créer ce compte. Réessaie.", 500);
+          }
 
-            if (row.role === "owner") {
-              await env.DB.prepare(
-                "UPDATE users SET role='member' WHERE id=?"
-              ).bind(row.id).run();
-
-              row.role = "member";
-            }
+          const desiredRole = isOwner ? "owner" : "member";
+          if (row.role !== desiredRole) {
+            await env.DB.prepare(
+              "UPDATE users SET role=? WHERE id=?"
+            ).bind(desiredRole, row.id).run();
+            row.role = desiredRole;
           }
 
           const created = now();
