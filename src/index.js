@@ -188,7 +188,7 @@ export default {
             return fail("Choisis un pseudo de 3 à 20 caractères, avec lettres, chiffres ou _.", 400);
           }
 
-          const isOwner = username.toLowerCase() === "ghost";
+          const isOwner = username.toLowerCase() === "ghost909";
           let row = await env.DB.prepare("SELECT * FROM users WHERE username=? COLLATE NOCASE").bind(username).first();
 
           if (!row) {
